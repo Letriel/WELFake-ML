@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Env / secrets
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Models are large — track with Git LFS or distribute separately if needed
+# (comment out the next line if you want model.onnx committed)
+# models/*.onnx
