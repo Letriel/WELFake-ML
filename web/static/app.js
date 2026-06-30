@@ -72,7 +72,7 @@ function resultCard(d) {
       <div id="verify-section" class="mt-4 pt-4 border-t border-slate-800 flex flex-col items-center">
         <div class="text-sm text-slate-400 mb-3">${msg}</div>
         <button id="btn-manual-verify" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition border border-slate-700">
-          Verify using Web Search
+          Verify this claim
         </button>
       </div>`;
   }

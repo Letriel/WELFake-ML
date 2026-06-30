@@ -28,5 +28,6 @@ FAKE_IS_HIGH = True        # flip if the team confirms the opposite orientation
 # --- Verification agent ---
 VERIFY_ON_LABEL = "FAKE"   # run the verifier only when prediction == this label
 VERIFY_MAX_RESULTS = 5
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash")
+

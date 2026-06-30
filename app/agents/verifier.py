@@ -10,8 +10,8 @@ import logging
 from typing import List, Optional
 
 from ..config import (
-    ANTHROPIC_API_KEY,
-    ANTHROPIC_MODEL,
+    GEMINI_API_KEY,
+    GEMINI_MODEL,
     VERIFY_MAX_RESULTS,
 )
 from ..schemas import Source, Verification
@@ -48,31 +48,27 @@ def _search(query: str, max_results: int) -> List[Source]:
 
 
 def _llm_summary(claim: str, sources: List[Source]) -> Optional[str]:
-    if not ANTHROPIC_API_KEY:
+    if not GEMINI_API_KEY or not GEMINI_MODEL:
         return None
     try:
-        import anthropic
+        from google import genai
 
-        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        client = genai.Client(api_key=GEMINI_API_KEY)
         context = "\n".join(f"- {s.title}: {s.snippet} ({s.url})" for s in sources)
-        msg = client.messages.create(
-            model=ANTHROPIC_MODEL,
-            max_tokens=320,
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        "A fake-news classifier flagged the claim below as likely FAKE. "
-                        "Using ONLY the search results, explain in 3-4 factual sentences "
-                        "what reputable sources actually say and whether the claim holds up.\n\n"
-                        f"CLAIM:\n{claim[:1500]}\n\nSEARCH RESULTS:\n{context}"
-                    ),
-                }
-            ],
+        
+        prompt = (
+            "A fake-news classifier flagged the claim below as likely FAKE. "
+            "Using ONLY the search results, explain in 3-4 factual sentences "
+            "what reputable sources actually say and whether the claim holds up. "
+            "Respond in the same language as the claim.\n\n"
+            f"CLAIM:\n{claim[:1500]}\n\nSEARCH RESULTS:\n{context}"
         )
-        return "".join(
-            b.text for b in msg.content if getattr(b, "type", None) == "text"
-        ).strip()
+        
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+        )
+        return (response.text or "").strip()
     except Exception as e:
         logger.warning("LLM summary failed: %s", e)
         return None
@@ -100,5 +96,5 @@ def verify_claim(
     summary = _llm_summary(claim, sources)
     method = "search+llm" if summary else "search"
     if not summary:
-        summary = "Compare the claim against the sources below to assess its accuracy. explain in the input source language"
+        summary = "Compare the claim against the sources below to assess its accuracy."
     return Verification(checked=True, method=method, summary=summary, sources=sources)

@@ -14,7 +14,7 @@ title + text  →  Translator agent → preprocess  →  ONNX LSTM
   translates it to English before classifying (handles long articles via chunking).
 * **Verification agent** — when a story is flagged **FAKE**, it calls a web search
   (DuckDuckGo, no API key) to surface what reputable sources actually report.
-  If `ANTHROPIC_API_KEY` is set, it also adds an LLM-written summary.
+  If `GEMINI_API_KEY` is set, it also adds an LLM-written summary.
 
 This targets the assignment's **80+ "Model integration using Agentic AI"** tier:
 a model exposed as an API, with agents that pass results to one another.
@@ -110,7 +110,7 @@ app/
   schemas.py         Pydantic request/response models
   agents/
     translator.py    Agent 1 — deep-translator auto→English
-    verifier.py      Agent 2 — DuckDuckGo search (+ optional Anthropic LLM)
+    verifier.py      Agent 2 — DuckDuckGo search (+ optional Gemini LLM)
 web/
   templates/index.html   Tailwind single-page UI
   static/app.js          fetch + rendering
@@ -124,5 +124,5 @@ Run tests with `python -m pytest tests/ -q`.
 * **Python 3.14**: the stack is intentionally TensorFlow-free (`onnxruntime` only),
   which installs cleanly on 3.14. The UI is served via `FileResponse` (not Jinja2,
   which currently has a 3.14 cache bug).
-* Optional LLM verification: copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY`.
+* Optional LLM verification: copy `.env.example` to `.env` and set `GEMINI_API_KEY`.
   Without it, the verifier still returns search sources.

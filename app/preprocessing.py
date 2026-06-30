@@ -6,6 +6,7 @@ It must produce byte-for-byte the same integer sequences as
 exact inputs it was trained on -- without depending on TensorFlow.
 """
 import json
+import re
 
 import numpy as np
 
@@ -13,6 +14,37 @@ from .config import MAXLEN, NUM_WORDS, OOV_TOKEN, PAD_FILTERS, WORD_INDEX_PATH
 
 # Map every Keras "filter" character to a space (str.translate is fast + exact).
 _TRANSLATE_MAP = {ord(c): " " for c in PAD_FILTERS}
+
+
+def clean_text(text: str) -> str:
+    """Upgraded text preprocessing that removes raw UTF-8 byte leaks (\\xe2...)
+    and isolates punctuation for optimal fake news classification.
+
+    Replicates tf_preprocess behavior using pure Python re.
+    """
+    if not isinstance(text, str):
+        text = "" if text is None else str(text)
+
+    # 1. Convert to lowercase
+    lowercase = text.lower()
+
+    # 2. CRITICAL FIX: Strip raw UTF-8 byte escape patterns (\\xe2\\x80\\x93, \\xe2\\x80\\x9d, etc.)
+    no_bytes = re.sub(r'\\xe2\\x80\\x[0-9a-fA-F]{2}', ' ', lowercase)
+    no_bytes = re.sub(r'\\x[0-9a-fA-F]{2}', ' ', no_bytes)
+
+    # 3. Standardize URLs and Web Links
+    no_urls = re.sub(r'https?://\S+|www\.\S+', ' <url> ', no_bytes)
+
+    # 4. Standardize Email addresses
+    no_emails = re.sub(r'\S+@\S+', ' <email> ', no_urls)
+
+    # 5. Isolate punctuation marks with spaces on both sides
+    isolated_punct = re.sub(r'([.,!?();:$\-\"\'\[\]])', r' \1 ', no_emails)
+
+    # 6. Collapse multiple spaces down to a single space
+    clean_spaces = re.sub(r'\s+', ' ', isolated_punct)
+
+    return clean_spaces.strip()
 
 
 def text_to_word_sequence(text):
@@ -75,11 +107,12 @@ def pad_sequence(seq, maxlen=MAXLEN, value=0):
 
 def preprocess(text, tokenizer, maxlen=MAXLEN):
     """One string -> float32 array of shape (1, maxlen)."""
-    padded = pad_sequence(tokenizer.text_to_sequence(text), maxlen=maxlen)
+    cleaned = clean_text(text)
+    padded = pad_sequence(tokenizer.text_to_sequence(cleaned), maxlen=maxlen)
     return np.array([padded], dtype=np.float32)
 
 
 def preprocess_batch(texts, tokenizer, maxlen=MAXLEN):
     """List of strings -> float32 array of shape (N, maxlen)."""
-    rows = [pad_sequence(tokenizer.text_to_sequence(t), maxlen=maxlen) for t in texts]
+    rows = [pad_sequence(tokenizer.text_to_sequence(clean_text(t)), maxlen=maxlen) for t in texts]
     return np.array(rows, dtype=np.float32)

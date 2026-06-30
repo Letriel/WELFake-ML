@@ -12,7 +12,21 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from app.config import MODEL_PATH, WORD_INDEX_PATH  # noqa: E402
-from app.preprocessing import pad_sequence, text_to_word_sequence  # noqa: E402
+from app.preprocessing import clean_text, pad_sequence, text_to_word_sequence  # noqa: E402
+
+
+def test_clean_text():
+    # 1. Lowercase and byte strip
+    assert clean_text("Hello \\xe2\\x80\\x93 World \\x9d") == "hello world"
+    
+    # 2. URLs
+    assert clean_text("Visit https://google.com or www.example.com for info") == "visit <url> or <url> for info"
+    
+    # 3. Emails
+    assert clean_text("Contact me at test@example.com now") == "contact me at <email> now"
+    
+    # 4. Punctuation isolation
+    assert clean_text("Hello, world!") == "hello , world !"
 
 
 def test_word_sequence_lowercases_and_strips_punctuation():
